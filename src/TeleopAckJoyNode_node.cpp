@@ -10,6 +10,7 @@ TeleopAckJoyNode::TeleopAckJoyNode(const rclcpp::NodeOptions& options) : Node("T
     max_steering_angle = this->declare_parameter<float>("max_steering_angle", 0.2733);
     max_speed = this->declare_parameter<float>("max_speed", 6.7056);
     throttle_axis = this->declare_parameter<int>("throttle_axis", 5);
+    reverse_axis = this->declare_parameter<int>("reverse_axis", 2);
     steering_axis = this->declare_parameter<int>("steering_axis", 0);
 
     joy_sub =
@@ -21,12 +22,14 @@ TeleopAckJoyNode::TeleopAckJoyNode(const rclcpp::NodeOptions& options) : Node("T
 void TeleopAckJoyNode::joy_cb(sensor_msgs::msg::Joy::SharedPtr outputs) {
     ackermann_msgs::msg::AckermannDrive command;
 
-    float throttle = -outputs->axes.at(throttle_axis);
+    // axes[i] == 1 if fully released, -1 if fully pressed
+    // neutral == 0, fully backward = left fully pressed == -1, fully forward = right fully pressed == 1
+    float throttle = (-outputs->axes.at(throttle_axis) + outputs->axes.at(reverse_axis)) / 2;
     float steering = outputs->axes.at(steering_axis);
 
     command.steering_angle =
         map_input(steering, min_axis_input, max_axis_input, min_steering_angle, max_steering_angle);
-    command.speed = map_input(throttle, min_axis_input, max_axis_input, 0, max_speed);
+    command.speed = map_input(throttle, min_axis_input, max_axis_input, -max_speed, max_speed);
 
     ackermann_pub->publish(command);
 }

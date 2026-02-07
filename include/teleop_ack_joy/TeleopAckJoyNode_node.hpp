@@ -14,6 +14,7 @@ private:
 
     // Parameters
     int throttle_axis;
+    int reverse_axis;
     int steering_axis;
     float min_axis_input;
     float max_axis_input;
